@@ -1,6 +1,6 @@
 {
-  "name": "BasKart — Grocery List",
-  "short_name": "BasKart",
+  "name": "BazKart — Grocery List",
+  "short_name": "BazKart",
   "description": "Smart grocery list with period copy",
   "start_url": "/index.html",
   "display": "standalone",

@@ -1,4 +1,4 @@
-const CACHE = 'baskart-v1';
+const CACHE = 'bazkart-v1';
 const ASSETS = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
