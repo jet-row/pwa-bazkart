@@ -36,9 +36,10 @@
       --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; font-family: var(--font); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; }
+    html { height: 100%; height: 100dvh; }
+    body { height: 100%; height: 100dvh; font-family: var(--font); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; overflow: hidden; }
 
-    #app { display: flex; flex-direction: column; height: 100%; max-width: 480px; margin: 0 auto; background: var(--paper); box-shadow: 0 0 0 1px var(--line); }
+    #app { display: flex; flex-direction: column; height: 100%; height: 100dvh; max-width: 480px; margin: 0 auto; background: var(--paper); box-shadow: 0 0 0 1px var(--line); }
 
     /* ── Header ── */
     header { background: var(--green-700); color: white; padding: 20px 20px 14px; padding-top: calc(20px + env(safe-area-inset-top,0px)); position: sticky; top: 0; z-index: 100; }
@@ -127,7 +128,7 @@
 
     /* ── Bottom bar ── */
     .list-title-bar { padding: 6px 16px 6px 13px; border-left: 3px solid var(--green-500); background: var(--green-50); border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--green-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .bottom-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; height: calc(var(--bar-height) + var(--safe-bottom)); padding: 0 16px; padding-bottom: var(--safe-bottom); background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px; z-index: 100; }
+    .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; width: 100%; height: calc(var(--bar-height) + var(--safe-bottom)); padding: 0 16px; padding-bottom: var(--safe-bottom); background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px; z-index: 100; }
 
     /* ── Empty state ── */
     .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 64px 32px; text-align: center; gap: 10px; }
@@ -736,8 +737,7 @@ function renderList() {
   if (clearBtn) clearBtn.addEventListener('click', clearDone);
   itemListEl.querySelectorAll('.item-qty-tag:not(.done)').forEach(el =>
     el.addEventListener('click', e => { e.stopPropagation(); startQtyEdit(el); }));
-  itemListEl.querySelectorAll('.item-row:not(.done)').forEach(el => { attachSwipe(el); bindDrag(el); });
-  itemListEl.querySelectorAll('.item-row.done').forEach(attachSwipe);
+  itemListEl.querySelectorAll('.item-row:not(.done)').forEach(el => bindDrag(el));
 }
 
 let _wasComplete = false;
@@ -846,36 +846,6 @@ function startQtyEdit(badge) {
     if (e.key === 'Escape') cancel();
   });
   setTimeout(() => document.addEventListener('pointerdown', outsideHandler), 100);
-}
-
-function attachSwipe(row) {
-  let startX = 0, startY = 0, dx = 0, swiping = false;
-  const THRESHOLD = 72;
-  row.addEventListener('touchstart', e => {
-    startX = e.touches[0].clientX; startY = e.touches[0].clientY;
-    dx = 0; swiping = false;
-    row.style.transition = 'none';
-  }, { passive: true });
-  row.addEventListener('touchmove', e => {
-    const cx = e.touches[0].clientX, cy = e.touches[0].clientY;
-    dx = cx - startX;
-    if (!swiping && Math.abs(cy - startY) > 10) return;
-    if (Math.abs(dx) > 6) swiping = true;
-    if (!swiping) return;
-    row.style.transform = `translateX(${dx}px)`;
-    const ratio = Math.min(Math.abs(dx) / THRESHOLD, 1);
-    row.style.background = dx > 0
-      ? `rgba(74,140,66,${ratio * 0.18})`
-      : `rgba(192,57,43,${ratio * 0.18})`;
-  }, { passive: true });
-  row.addEventListener('touchend', () => {
-    row.style.transition = 'transform .2s ease, background .15s ease';
-    row.style.transform = ''; row.style.background = '';
-    if (!swiping) return;
-    if (dx > THRESHOLD) toggle(row.dataset.id);
-    else if (dx < -THRESHOLD) remove(row.dataset.id);
-    swiping = false;
-  });
 }
 
 // ── Drag to reorder ───────────────────────────────────────────────────────────
