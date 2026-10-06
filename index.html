@@ -129,6 +129,7 @@
     /* ── Bottom bar ── */
     .list-title-bar { padding: 6px 16px 6px 13px; border-left: 3px solid var(--green-500); background: var(--green-50); border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--green-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; width: 100%; height: calc(var(--bar-height) + var(--safe-bottom)); padding: 0 16px; padding-bottom: var(--safe-bottom); background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px; z-index: 100; }
+    .bottom-bar::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 48px; background: rgba(255,255,255,.92); }
 
     /* ── Empty state ── */
     .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 64px 32px; text-align: center; gap: 10px; }
@@ -201,6 +202,16 @@
     .format-pill.json { border-color: #c07d00; color: #c07d00; background: #fff8e6; }
     .format-pill.csv  { border-color: #1761a0; color: #1761a0; background: #e8f0fb; }
 
+    .template-row { display: flex; align-items: center; gap: 7px; margin-top: 14px; flex-wrap: wrap; }
+    .template-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-right: 2px; }
+    .template-btn { font-size: 11px; font-weight: 700; padding: 3px 11px; border-radius: 20px; border: 1.5px solid var(--line); cursor: pointer; transition: all .12s; }
+    .template-btn.xlsx { border-color: #1d7044; color: #1d7044; background: #eaf7ef; }
+    .template-btn.xlsx:hover { background: #c8e6c5; }
+    .template-btn.csv  { border-color: #1761a0; color: #1761a0; background: #e8f0fb; }
+    .template-btn.csv:hover  { background: #c5d8f5; }
+    .template-btn.json { border-color: #c07d00; color: #c07d00; background: #fff8e6; }
+    .template-btn.json:hover { background: #ffe4a0; }
+
     .import-preview { border: 1.5px solid var(--line); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 4px; }
     .import-preview-header { padding: 10px 14px; background: var(--green-50); border-bottom: 1px solid var(--green-200); display: flex; align-items: center; justify-content: space-between; }
     .import-preview-title { font-size: 13px; font-weight: 600; color: var(--green-700); }
@@ -236,6 +247,7 @@
       html:not([data-theme="light"]) .btn-danger { background: rgba(192,57,43,.18); color: #e07070; border-color: rgba(192,57,43,.35); }
       html:not([data-theme="light"]) .btn-danger:hover { background: rgba(192,57,43,.30); }
       html:not([data-theme="light"]) .bottom-bar { background: rgba(34,34,34,.92); }
+      html:not([data-theme="light"]) .bottom-bar::after { background: rgba(34,34,34,.92); }
       html:not([data-theme="light"]) .toast { background: rgba(240,240,240,.95); color: #1c1c1c; }
     }
     html[data-theme="dark"] { --cream: #1a1a1a; --paper: #222; --ink: #f0f0f0; --muted: #999; --line: #333; --green-50: #1a2e1a; --green-200: #2a4a27; }
@@ -248,6 +260,7 @@
     html[data-theme="dark"] .btn-danger { background: rgba(192,57,43,.18); color: #e07070; border-color: rgba(192,57,43,.35); }
     html[data-theme="dark"] .btn-danger:hover { background: rgba(192,57,43,.30); }
     html[data-theme="dark"] .bottom-bar { background: rgba(34,34,34,.92); }
+    html[data-theme="dark"] .bottom-bar::after { background: rgba(34,34,34,.92); }
     html[data-theme="dark"] .toast { background: rgba(240,240,240,.95); color: #1c1c1c; }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
@@ -457,8 +470,14 @@
       </div>
       <p style="font-size:13px;color:var(--muted);line-height:1.5">
         <strong>Excel / CSV:</strong> needs a column with item names. Quantity column is optional.<br>
-        <strong>JSON:</strong> array of <code style="background:var(--line);padding:1px 5px;border-radius:4px">{"name":"…","qty":"…"}</code> objects, or a Basket export.
+        <strong>JSON:</strong> array of <code style="background:var(--line);padding:1px 5px;border-radius:4px">{"name":"…","qty":"…"}</code> objects, or a BazKart export.
       </p>
+      <div class="template-row">
+        <span class="template-label">Download template:</span>
+        <button class="template-btn xlsx" id="tmpl-xlsx">↓ Excel</button>
+        <button class="template-btn csv"  id="tmpl-csv">↓ CSV</button>
+        <button class="template-btn json" id="tmpl-json">↓ JSON</button>
+      </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" id="import-cancel-1">Cancel</button>
       </div>
@@ -1382,6 +1401,44 @@ function doImport() {
   save(state); closeModal(importModal); render();
   toast(`${toAdd.length} item${toAdd.length>1?'s':''} imported ✓`);
 }
+
+// ── Import templates ──────────────────────────────────────────────────────────
+const TEMPLATE_ROWS = [
+  { Name: 'Milk',             Qty: '2' },
+  { Name: 'Sourdough bread',  Qty: '' },
+  { Name: 'Eggs',             Qty: '12' },
+  { Name: 'Olive oil',        Qty: '1 bottle' },
+  { Name: 'Spinach',          Qty: '' },
+];
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function downloadTemplate(fmt) {
+  if (fmt === 'csv') {
+    const csv = 'Name,Qty\n' + TEMPLATE_ROWS.map(r => `${r.Name},${r.Qty}`).join('\n');
+    triggerDownload(new Blob([csv], { type: 'text/csv' }), 'bazkart-template.csv');
+  } else if (fmt === 'json') {
+    const json = JSON.stringify(TEMPLATE_ROWS.map(r => ({ name: r.Name, qty: r.Qty })), null, 2);
+    triggerDownload(new Blob([json], { type: 'application/json' }), 'bazkart-template.json');
+  } else if (fmt === 'xlsx') {
+    loadXLSX().then(XLSX => {
+      const ws = XLSX.utils.json_to_sheet(TEMPLATE_ROWS);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Items');
+      XLSX.writeFile(wb, 'bazkart-template.xlsx');
+    }).catch(() => toast('Could not generate Excel template'));
+  }
+}
+
+document.getElementById('tmpl-xlsx').addEventListener('click', () => downloadTemplate('xlsx'));
+document.getElementById('tmpl-csv').addEventListener('click',  () => downloadTemplate('csv'));
+document.getElementById('tmpl-json').addEventListener('click', () => downloadTemplate('json'));
 
 // Drop zone events
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
