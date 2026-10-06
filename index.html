@@ -56,9 +56,14 @@
     .year-label { font-size: 14px; font-weight: 600; color: white; min-width: 44px; text-align: center; }
     .year-arrow { background: rgba(255,255,255,.15); border: none; color: white; font-size: 18px; cursor: pointer; padding: 1px 10px 2px; border-radius: 8px; line-height: 1.6; transition: background .15s; }
     .year-arrow:hover { background: rgba(255,255,255,.25); }
-    .year-cfg { margin-left: auto; background: rgba(255,255,255,.15); border: none; color: white; cursor: pointer; padding: 5px 11px; border-radius: 8px; font-size: 12px; font-weight: 500; transition: background .15s; white-space: nowrap; }
+    .year-cfg { background: rgba(255,255,255,.15); border: none; color: white; cursor: pointer; padding: 5px 11px; border-radius: 8px; font-size: 12px; font-weight: 500; transition: background .15s; white-space: nowrap; }
     .year-cfg:hover { background: rgba(255,255,255,.25); }
-    .month-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+    .year-cfg-group { margin-left: auto; display: flex; gap: 5px; }
+    .grid-toggle { background: rgba(255,255,255,.12); border: none; color: rgba(255,255,255,.85); cursor: pointer; font-size: 12px; padding: 2px 9px; border-radius: 6px; transition: background .15s, transform .2s; line-height: 1.7; }
+    .grid-toggle:hover { background: rgba(255,255,255,.22); color: white; }
+    .grid-toggle.open { transform: rotate(180deg); }
+    .month-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; overflow: hidden; max-height: 80px; transition: max-height .22s ease, opacity .18s ease, margin-top .22s ease; opacity: 1; margin-top: 0; }
+    .month-grid.collapsed { max-height: 0; opacity: 0; margin-top: -4px; pointer-events: none; }
     .month-cell { padding: 7px 2px 4px; text-align: center; border-radius: 9px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s; color: rgba(255,255,255,.35); user-select: none; }
     .month-cell.has-data { color: rgba(255,255,255,.85); }
     .month-dot { display: none; width: 4px; height: 4px; background: rgba(255,255,255,.5); border-radius: 50%; margin: 2px auto 0; }
@@ -67,15 +72,10 @@
     .month-cell.active .month-dot { display: block; background: rgba(26,61,43,.35); }
     .month-cell:not(.active):hover { background: rgba(255,255,255,.14); color: white; }
 
-    /* ── Stats bar ── */
-    .stats-bar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--paper); border-bottom: 1px solid var(--line); }
-    .progress-pill { flex: 1; display: flex; align-items: center; gap: 9px; min-width: 0; }
-    .progress-track { width: 110px; height: 7px; background: var(--line); border-radius: 999px; overflow: hidden; flex-shrink: 0; }
+    .progress-track { flex: 1; height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
     .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--green-700) 0%, var(--green-500) 100%); border-radius: 999px; transition: width .4s ease; }
     .progress-text { font-size: 12px; color: var(--muted); font-weight: 500; white-space: nowrap; }
-    .copy-btn { font-size: 12px; font-weight: 500; color: var(--green-700); background: none; border: 1px solid var(--line); border-radius: 8px; padding: 5px 11px; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background .12s, border-color .12s; }
-    .copy-btn:hover { background: var(--green-50); border-color: var(--green-200); }
-    .copy-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .year-cfg:disabled { opacity: .4; cursor: not-allowed; }
 
     /* ── Add form ── */
     .add-form { padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 8px; align-items: center; }
@@ -91,10 +91,10 @@
     .item-row { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 8px 16px; border-bottom: 1px solid var(--line); transition: background .1s; animation: fadeIn .16s ease; }
     .item-row:hover { background: var(--green-50); }
     @keyframes fadeIn { from { opacity:0; transform:translateY(-3px); } to { opacity:1; transform:translateY(0); } }
-    .item-check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--line); background: white; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+    .item-check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--line); background: var(--paper); cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
     .item-row.done .item-check { background: var(--green-500); border-color: var(--green-500); }
     .item-name { flex: 1; font-size: 15px; font-weight: 500; color: var(--ink); letter-spacing: -.01em; transition: color .15s; }
-    .item-row.done .item-name { color: #b8b8b8; text-decoration: line-through; text-decoration-thickness: 1.5px; font-weight: 400; }
+    .item-row.done .item-name { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1.5px; font-weight: 400; }
     .item-qty-tag { font-size: 12px; font-weight: 600; color: var(--green-700); background: var(--green-50); padding: 2px 8px; border-radius: 20px; flex-shrink: 0; letter-spacing: -.01em; }
     .item-qty-tag.done { color: var(--muted); background: var(--line); font-weight: 500; }
     .item-actions { display: flex; gap: 4px; flex-shrink: 0; }
@@ -104,7 +104,30 @@
     /* ── Completed divider ── */
     .completed-divider { display: flex; align-items: center; gap: 10px; padding: 16px 16px 8px; }
     .div-line { flex: 1; height: 1px; background: var(--line); }
-    .div-text { font-size: 11px; color: #b8b8b8; letter-spacing: .09em; font-weight: 500; white-space: nowrap; text-transform: uppercase; }
+    .div-text { font-size: 11px; color: var(--muted); letter-spacing: .09em; font-weight: 500; white-space: nowrap; text-transform: uppercase; }
+    .clear-done-btn { font-size: 11px; font-weight: 600; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; cursor: pointer; white-space: nowrap; line-height: 1.8; transition: all .12s; }
+    .clear-done-btn:hover { background: #fdecea; color: var(--red); border-color: #f5c6c2; }
+
+    /* ── Inline qty edit ── */
+    .qty-edit-input { width: 56px; font-size: 12px; font-weight: 600; color: var(--green-700); background: var(--green-50); border: 1.5px solid var(--green-500); border-radius: 20px; padding: 2px 8px; text-align: center; font-family: var(--font); outline: none; }
+
+    /* ── Drag to reorder ── */
+    .drag-handle { font-size: 15px; color: var(--line); cursor: grab; flex-shrink: 0; padding: 0 4px 0 0; user-select: none; touch-action: none; }
+    .drag-handle:hover { color: var(--muted); }
+    .drag-spacer { width: 19px; flex-shrink: 0; }
+    .item-row.dragging { opacity: .35; }
+    .item-row.drag-over { box-shadow: inset 0 2px 0 var(--green-500); }
+
+    /* ── Toast action button ── */
+    .toast-undo { background: none; border: none; font-family: var(--font); font-size: 14px; font-weight: 700; cursor: pointer; padding: 0; margin-left: 10px; color: inherit; text-decoration: underline; opacity: .85; }
+
+    /* ── Progress complete animation ── */
+    @keyframes completeShimmer { 0%,100% { opacity:1; } 40% { opacity:.6; filter: brightness(1.4); } }
+    .progress-fill.complete { animation: completeShimmer .7s ease; }
+
+    /* ── Bottom bar ── */
+    .list-title-bar { padding: 6px 16px 6px 13px; border-left: 3px solid var(--green-500); background: var(--green-50); border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--green-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bottom-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; height: calc(var(--bar-height) + var(--safe-bottom)); padding: 0 16px; padding-bottom: var(--safe-bottom); background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px; z-index: 100; }
 
     /* ── Empty state ── */
     .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 64px 32px; text-align: center; gap: 10px; }
@@ -112,9 +135,6 @@
     .empty-title { font-size: 17px; font-weight: 600; }
     .empty-sub   { font-size: 14px; color: var(--muted); line-height: 1.5; }
 
-    /* ── Bottom bar ── */
-    .bottom-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; height: calc(var(--bar-height) + var(--safe-bottom)); padding-bottom: var(--safe-bottom); background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: center; z-index: 100; font-size: 13px; color: var(--muted); }
-    .bottom-bar strong { color: var(--ink); }
 
     /* ── Modal backdrop ── */
     .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .2s; }
@@ -143,29 +163,18 @@
     .btn-danger:hover { background: #f5c6c2; }
 
     /* ── Period config modal specifics ── */
-    .cfg-section { margin-bottom: 20px; }
-    .cfg-section-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
-
-    .cadence-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .cadence-opt { padding: 12px; border: 1.5px solid var(--line); border-radius: var(--radius-md); cursor: pointer; transition: all .15s; text-align: center; }
-    .cadence-opt:hover { border-color: var(--green-500); background: var(--green-50); }
-    .cadence-opt.sel { border-color: var(--green-700); background: var(--green-50); }
-    .cadence-opt-icon { font-size: 20px; margin-bottom: 4px; }
-    .cadence-opt-label { font-size: 13px; font-weight: 600; color: var(--ink); }
-    .cadence-opt-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-
     .custom-days-wrap { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
     .custom-days-wrap input { width: 70px; }
     .custom-days-wrap span { font-size: 14px; color: var(--muted); }
 
+    .cadence-pills { display: flex; gap: 4px; margin-top: 4px; }
+    .cadence-pill { flex: 1; padding: 9px 4px; border: 1.5px solid var(--line); border-radius: 8px; cursor: pointer; text-align: center; font-size: 13px; font-weight: 500; color: var(--muted); transition: all .15s; }
+    .cadence-pill:hover { border-color: var(--green-500); color: var(--ink); background: var(--green-50); }
+    .cadence-pill.sel { border-color: var(--green-700); background: var(--green-50); color: var(--green-700); font-weight: 600; }
+
     .cfg-danger-zone { border: 1.5px solid #f5c6c2; border-radius: var(--radius-md); padding: 14px; background: #fff8f7; }
     .cfg-danger-title { font-size: 13px; font-weight: 600; color: var(--red); margin-bottom: 6px; }
     .cfg-danger-sub { font-size: 13px; color: var(--muted); margin-bottom: 12px; line-height: 1.4; }
-
-    .period-info-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
-    .period-info-row:last-child { border-bottom: none; }
-    .period-info-label { color: var(--muted); }
-    .period-info-value { font-weight: 500; }
 
     /* ── Copy modal ── */
     .period-list { display: flex; flex-direction: column; gap: 8px; }
@@ -226,6 +235,7 @@
       html:not([data-theme="light"]) .btn-danger { background: rgba(192,57,43,.18); color: #e07070; border-color: rgba(192,57,43,.35); }
       html:not([data-theme="light"]) .btn-danger:hover { background: rgba(192,57,43,.30); }
       html:not([data-theme="light"]) .bottom-bar { background: rgba(34,34,34,.92); }
+      html:not([data-theme="light"]) .toast { background: rgba(240,240,240,.95); color: #1c1c1c; }
     }
     html[data-theme="dark"] { --cream: #1a1a1a; --paper: #222; --ink: #f0f0f0; --muted: #999; --line: #333; --green-50: #1a2e1a; --green-200: #2a4a27; }
     html[data-theme="dark"] .add-input,
@@ -237,6 +247,7 @@
     html[data-theme="dark"] .btn-danger { background: rgba(192,57,43,.18); color: #e07070; border-color: rgba(192,57,43,.35); }
     html[data-theme="dark"] .btn-danger:hover { background: rgba(192,57,43,.30); }
     html[data-theme="dark"] .bottom-bar { background: rgba(34,34,34,.92); }
+    html[data-theme="dark"] .toast { background: rgba(240,240,240,.95); color: #1c1c1c; }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
     }
@@ -264,21 +275,19 @@
       <button class="year-arrow" id="year-prev" aria-label="Previous year">‹</button>
       <span class="year-label" id="year-label"></span>
       <button class="year-arrow" id="year-next" aria-label="Next year">›</button>
-      <button class="year-cfg" id="list-cfg-btn">⚙ Settings</button>
+      <button class="grid-toggle open" id="grid-toggle" aria-label="Toggle month grid">˅</button>
+      <div class="year-cfg-group">
+        <button class="year-cfg" id="copy-btn">⎘ Copy</button>
+        <button class="year-cfg" id="list-cfg-btn">⚙ Settings</button>
+      </div>
     </div>
     <div class="month-grid" id="month-grid"></div>
   </header>
 
-  <div class="stats-bar">
-    <div class="progress-pill">
-      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
-      <span class="progress-text" id="progress-text">0 done · 0 to get</span>
-    </div>
-    <button class="copy-btn" id="copy-btn">Copy from…</button>
-  </div>
+  <div class="list-title-bar" id="list-name"></div>
 
   <div class="add-form">
-    <input class="add-input" id="add-input" type="text" placeholder="Add items… e.g. Milk 2×, Eggs 12, Bread" autocomplete="off" />
+    <input class="add-input" id="add-input" type="text" placeholder="Add item… use commas for multiple" autocomplete="off" />
     <button class="add-submit" id="add-btn" aria-label="Add">
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 3v12M3 9h12" stroke="white" stroke-width="2.2" stroke-linecap="round"/></svg>
     </button>
@@ -293,7 +302,10 @@
     <div id="item-list"></div>
   </div>
 
-  <div class="bottom-bar" id="bottom-bar">No items yet</div>
+  <div class="bottom-bar" id="bottom-bar">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="progress-text" id="progress-text">0 done · 0 to get</span>
+  </div>
 </div>
 
 <!-- ── Item edit modal ── -->
@@ -324,55 +336,24 @@
     <div class="modal-handle"></div>
     <div class="modal-title" id="cfg-modal-title">List settings</div>
 
-    <!-- Info row -->
-    <div class="cfg-section">
-      <div class="cfg-section-title">Details</div>
-      <div class="period-info-row">
-        <span class="period-info-label">Items</span>
-        <span class="period-info-value" id="cfg-item-count">—</span>
-      </div>
-      <div class="period-info-row">
-        <span class="period-info-label">Created</span>
-        <span class="period-info-value" id="cfg-created">—</span>
-      </div>
-      <div class="period-info-row">
-        <span class="period-info-label">Ends</span>
-        <span class="period-info-value" id="cfg-ends">—</span>
-      </div>
-    </div>
-
-    <!-- Rename -->
-    <div class="cfg-section">
-      <div class="cfg-section-title">Name</div>
-      <div class="form-group">
+    <div class="form-row">
+      <div class="form-group" style="flex:2">
+        <label class="form-label">Name</label>
         <input class="form-input" id="cfg-label" type="text" placeholder="List name" />
       </div>
+      <div class="form-group">
+        <label class="form-label">Starts</label>
+        <input class="form-input" id="cfg-start" type="date" />
+      </div>
     </div>
 
-    <!-- Cadence -->
-    <div class="cfg-section">
-      <div class="cfg-section-title">Shopping cadence</div>
-      <div class="cadence-grid" id="cadence-grid">
-        <div class="cadence-opt" data-cadence="weekly">
-          <div class="cadence-opt-icon">📅</div>
-          <div class="cadence-opt-label">Weekly</div>
-          <div class="cadence-opt-sub">Every 7 days</div>
-        </div>
-        <div class="cadence-opt" data-cadence="biweekly">
-          <div class="cadence-opt-icon">🗓️</div>
-          <div class="cadence-opt-label">Bi-weekly</div>
-          <div class="cadence-opt-sub">Every 14 days</div>
-        </div>
-        <div class="cadence-opt" data-cadence="monthly">
-          <div class="cadence-opt-icon">🌙</div>
-          <div class="cadence-opt-label">Monthly</div>
-          <div class="cadence-opt-sub">Once a month</div>
-        </div>
-        <div class="cadence-opt" data-cadence="custom">
-          <div class="cadence-opt-icon">⚙️</div>
-          <div class="cadence-opt-label">Custom</div>
-          <div class="cadence-opt-sub">Set your own</div>
-        </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">Shopping cadence</label>
+      <div class="cadence-pills" id="cadence-grid">
+        <div class="cadence-pill" data-cadence="weekly">Weekly</div>
+        <div class="cadence-pill" data-cadence="biweekly">Bi-weekly</div>
+        <div class="cadence-pill" data-cadence="monthly">Monthly</div>
+        <div class="cadence-pill" data-cadence="custom">Custom</div>
       </div>
       <div class="custom-days-wrap" id="custom-days-wrap" style="display:none">
         <input class="form-input" id="cfg-custom-days" type="number" min="1" max="365" placeholder="14" style="width:80px" />
@@ -380,28 +361,17 @@
       </div>
     </div>
 
-    <!-- Start date -->
-    <div class="cfg-section">
-      <div class="cfg-section-title">Start date</div>
-      <div class="form-group">
-        <input class="form-input" id="cfg-start" type="date" />
+    <div class="cfg-danger-zone">
+      <div class="cfg-danger-title">Danger zone</div>
+      <div class="cfg-danger-sub">Deleting this list removes all its items permanently.</div>
+      <div id="cfg-delete-default">
+        <button class="btn btn-danger" id="cfg-delete-btn" style="max-width:200px;font-size:14px;height:42px;padding:0 20px">Delete this list</button>
       </div>
-    </div>
-
-    <!-- Danger zone -->
-    <div class="cfg-section">
-      <div class="cfg-danger-zone">
-        <div class="cfg-danger-title">Danger zone</div>
-        <div class="cfg-danger-sub">Deleting this list removes all its items permanently.</div>
-        <div id="cfg-delete-default">
-          <button class="btn btn-danger" id="cfg-delete-btn" style="max-width:200px;font-size:14px;height:42px;padding:0 20px">Delete this list</button>
-        </div>
-        <div id="cfg-delete-confirm-wrap" style="display:none">
-          <p style="font-size:13px;color:var(--red);font-weight:600;margin-bottom:8px">This cannot be undone. Are you sure?</p>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost" id="cfg-delete-no" style="height:38px;font-size:13px">Cancel</button>
-            <button class="btn btn-danger" id="cfg-delete-yes" style="height:38px;font-size:13px">Yes, delete permanently</button>
-          </div>
+      <div id="cfg-delete-confirm-wrap" style="display:none">
+        <p style="font-size:13px;color:var(--red);font-weight:600;margin-bottom:8px">This cannot be undone. Are you sure?</p>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" id="cfg-delete-no" style="height:38px;font-size:13px">Cancel</button>
+          <button class="btn btn-danger" id="cfg-delete-yes" style="height:38px;font-size:13px">Yes, delete permanently</button>
         </div>
       </div>
     </div>
@@ -419,47 +389,28 @@
     <div class="modal-handle"></div>
     <div class="modal-title" id="new-modal-title">New list</div>
 
-    <div class="cfg-section">
-      <div class="cfg-section-title">Name</div>
+    <div class="form-row">
+      <div class="form-group" style="flex:2">
+        <label class="form-label">Name</label>
+        <input class="form-input" id="new-label" type="text" placeholder="e.g. Monthly shop" />
+      </div>
       <div class="form-group">
-        <input class="form-input" id="new-label" type="text" placeholder="e.g. Weekly shop" />
+        <label class="form-label">Starts</label>
+        <input class="form-input" id="new-start" type="date" />
       </div>
     </div>
 
-    <div class="cfg-section">
-      <div class="cfg-section-title">Shopping cadence</div>
-      <div class="cadence-grid" id="new-cadence-grid">
-        <div class="cadence-opt" data-cadence="weekly">
-          <div class="cadence-opt-icon">📅</div>
-          <div class="cadence-opt-label">Weekly</div>
-          <div class="cadence-opt-sub">Every 7 days</div>
-        </div>
-        <div class="cadence-opt" data-cadence="biweekly">
-          <div class="cadence-opt-icon">🗓️</div>
-          <div class="cadence-opt-label">Bi-weekly</div>
-          <div class="cadence-opt-sub">Every 14 days</div>
-        </div>
-        <div class="cadence-opt sel" data-cadence="monthly">
-          <div class="cadence-opt-icon">🌙</div>
-          <div class="cadence-opt-label">Monthly</div>
-          <div class="cadence-opt-sub">Once a month</div>
-        </div>
-        <div class="cadence-opt" data-cadence="custom">
-          <div class="cadence-opt-icon">⚙️</div>
-          <div class="cadence-opt-label">Custom</div>
-          <div class="cadence-opt-sub">Set your own</div>
-        </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">Shopping cadence</label>
+      <div class="cadence-pills" id="new-cadence-grid">
+        <div class="cadence-pill" data-cadence="weekly">Weekly</div>
+        <div class="cadence-pill" data-cadence="biweekly">Bi-weekly</div>
+        <div class="cadence-pill sel" data-cadence="monthly">Monthly</div>
+        <div class="cadence-pill" data-cadence="custom">Custom</div>
       </div>
       <div class="custom-days-wrap" id="new-custom-days-wrap" style="display:none">
         <input class="form-input" id="new-custom-days" type="number" min="1" max="365" placeholder="14" style="width:80px" />
         <span>days per period</span>
-      </div>
-    </div>
-
-    <div class="cfg-section">
-      <div class="cfg-section-title">Start date</div>
-      <div class="form-group">
-        <input class="form-input" id="new-start" type="date" />
       </div>
     </div>
 
@@ -624,7 +575,6 @@ let cfgCadence   = null;
 // ── DOM ───────────────────────────────────────────────────────────────────────
 const itemListEl   = document.getElementById('item-list');
 const emptyEl      = document.getElementById('empty-state');
-const bottomBar    = document.getElementById('bottom-bar');
 const addInput     = document.getElementById('add-input');
 const addBtn       = document.getElementById('add-btn');
 const toastEl      = document.getElementById('toast');
@@ -639,9 +589,6 @@ const cfgLabel     = document.getElementById('cfg-label');
 const cfgStart     = document.getElementById('cfg-start');
 const cfgCustomDaysWrap = document.getElementById('custom-days-wrap');
 const cfgCustomDays = document.getElementById('cfg-custom-days');
-const cfgItemCount = document.getElementById('cfg-item-count');
-const cfgCreated   = document.getElementById('cfg-created');
-const cfgEnds      = document.getElementById('cfg-ends');
 
 const newModal     = document.getElementById('new-modal');
 const newLabel     = document.getElementById('new-label');
@@ -700,7 +647,7 @@ function openNewModalForMonth(key) {
   newStart.value = `${key}-01`;
   newCustomDays.value = 14;
   newCustomDaysWrap.style.display = 'none';
-  document.getElementById('new-cadence-grid').querySelectorAll('.cadence-opt').forEach(el => {
+  document.getElementById('new-cadence-grid').querySelectorAll('[data-cadence]').forEach(el => {
     el.classList.toggle('sel', el.dataset.cadence === newCadence);
   });
   showModal(newModal);
@@ -730,8 +677,9 @@ function renderList() {
   const divider = pending.length && done.length ? `
     <div class="completed-divider">
       <div class="div-line"></div>
-      <span class="div-text">Completed</span>
+      <span class="div-text">Completed (${done.length})</span>
       <div class="div-line"></div>
+      <button class="clear-done-btn">Clear</button>
     </div>` : '';
   itemListEl.innerHTML = pending.map(row).join('') + divider + done.map(row).join('');
   itemListEl.querySelectorAll('.item-check').forEach(el =>
@@ -740,17 +688,31 @@ function renderList() {
     el.addEventListener('click', () => openEdit(el.closest('.item-row').dataset.id)));
   itemListEl.querySelectorAll('.del-btn').forEach(el =>
     el.addEventListener('click', () => remove(el.closest('.item-row').dataset.id)));
+  const clearBtn = itemListEl.querySelector('.clear-done-btn');
+  if (clearBtn) clearBtn.addEventListener('click', clearDone);
+  itemListEl.querySelectorAll('.item-qty-tag:not(.done)').forEach(el =>
+    el.addEventListener('click', e => { e.stopPropagation(); startQtyEdit(el); }));
+  itemListEl.querySelectorAll('.item-row').forEach(attachSwipe);
 }
 
+let _wasComplete = false;
 function renderStats() {
   const all = items();
   const p = all.filter(i => !i.done).length;
   const d = all.filter(i =>  i.done).length;
   const pct = all.length ? Math.round(d / all.length * 100) : 0;
-  document.getElementById('progress-fill').style.width = pct + '%';
-  document.getElementById('progress-text').textContent = `${d} done · ${p} to get`;
-  bottomBar.innerHTML = all.length
-    ? `<strong>${p}</strong>&nbsp;remaining · <strong>${d}</strong>&nbsp;checked off`
+  const fill = document.getElementById('progress-fill');
+  fill.style.width = pct + '%';
+  const nowComplete = pct === 100 && all.length > 0;
+  if (nowComplete && !_wasComplete) {
+    fill.classList.remove('complete');
+    requestAnimationFrame(() => fill.classList.add('complete'));
+    toast('All done! ✓');
+  }
+  _wasComplete = nowComplete;
+  document.getElementById('list-name').textContent = state.periods[state.current]?.label || '';
+  document.getElementById('progress-text').textContent = all.length
+    ? `${d} done · ${p} to get`
     : 'No items yet';
   document.getElementById('copy-btn').disabled = Object.keys(state.periods).length < 2;
 }
@@ -782,6 +744,62 @@ function remove(id) {
 }
 
 function findItem(id) { return items().find(i => i.id === id); }
+
+function clearDone() {
+  const n = items().filter(i => i.done).length;
+  state.periods[state.current].items = items().filter(i => !i.done);
+  save(state); render(); toast(`${n} item${n !== 1 ? 's' : ''} cleared`);
+}
+
+function startQtyEdit(badge) {
+  const row = badge.closest('.item-row');
+  const id = row.dataset.id;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = badge.textContent;
+  input.className = 'qty-edit-input';
+  badge.replaceWith(input);
+  input.focus(); input.select();
+  const commit = () => {
+    const item = findItem(id);
+    if (item) { item.qty = input.value.trim(); save(state); renderList(); renderStats(); }
+  };
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') input.blur();
+    if (e.key === 'Escape') { renderList(); renderStats(); }
+  });
+}
+
+function attachSwipe(row) {
+  let startX = 0, startY = 0, dx = 0, swiping = false;
+  const THRESHOLD = 72;
+  row.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+    dx = 0; swiping = false;
+    row.style.transition = 'none';
+  }, { passive: true });
+  row.addEventListener('touchmove', e => {
+    const cx = e.touches[0].clientX, cy = e.touches[0].clientY;
+    dx = cx - startX;
+    if (!swiping && Math.abs(cy - startY) > 10) return;
+    if (Math.abs(dx) > 6) swiping = true;
+    if (!swiping) return;
+    row.style.transform = `translateX(${dx}px)`;
+    const ratio = Math.min(Math.abs(dx) / THRESHOLD, 1);
+    row.style.background = dx > 0
+      ? `rgba(74,140,66,${ratio * 0.18})`
+      : `rgba(192,57,43,${ratio * 0.18})`;
+  }, { passive: true });
+  row.addEventListener('touchend', () => {
+    row.style.transition = 'transform .2s ease, background .15s ease';
+    row.style.transform = ''; row.style.background = '';
+    if (!swiping) return;
+    if (dx > THRESHOLD) toggle(row.dataset.id);
+    else if (dx < -THRESHOLD) remove(row.dataset.id);
+    swiping = false;
+  });
+}
 
 // ── Edit item modal ───────────────────────────────────────────────────────────
 function openEdit(id) {
@@ -815,18 +833,12 @@ function openCfg(id) {
   const p = state.periods[id];
   cfgCadence = p.cadence || 'biweekly';
 
-  // populate info
-  const n = p.items.length;
-  cfgItemCount.textContent = `${n} item${n !== 1 ? 's' : ''}`;
-  cfgCreated.textContent   = fmtDate(p.created);
-  cfgEnds.textContent      = fmtDate(p.ends);
-
   cfgLabel.value = p.label;
   cfgStart.value = p.start || isoToday();
   cfgCustomDays.value = p.customDays || 14;
 
   // cadence grid
-  document.getElementById('cadence-grid').querySelectorAll('.cadence-opt').forEach(el => {
+  document.getElementById('cadence-grid').querySelectorAll('[data-cadence]').forEach(el => {
     el.classList.toggle('sel', el.dataset.cadence === cfgCadence);
   });
   cfgCustomDaysWrap.style.display = cfgCadence === 'custom' ? 'flex' : 'none';
@@ -877,7 +889,7 @@ function openNewModal() {
   newStart.value = isoToday();
   newCustomDays.value = 14;
   newCustomDaysWrap.style.display = 'none';
-  document.getElementById('new-cadence-grid').querySelectorAll('.cadence-opt').forEach(el => {
+  document.getElementById('new-cadence-grid').querySelectorAll('[data-cadence]').forEach(el => {
     el.classList.toggle('sel', el.dataset.cadence === newCadence);
   });
   showModal(newModal);
@@ -945,10 +957,10 @@ function doCopy() {
 
 // ── Cadence grid helper ───────────────────────────────────────────────────────
 function bindCadenceGrid(gridId, customWrapId, getCadence, setCadence) {
-  document.getElementById(gridId).querySelectorAll('.cadence-opt').forEach(el => {
+  document.getElementById(gridId).querySelectorAll('[data-cadence]').forEach(el => {
     el.addEventListener('click', () => {
       setCadence(el.dataset.cadence);
-      document.getElementById(gridId).querySelectorAll('.cadence-opt').forEach(e =>
+      document.getElementById(gridId).querySelectorAll('[data-cadence]').forEach(e =>
         e.classList.toggle('sel', e.dataset.cadence === getCadence()));
       document.getElementById(customWrapId).style.display = getCadence() === 'custom' ? 'flex' : 'none';
     });
@@ -1029,6 +1041,16 @@ bindCadenceGrid('cadence-grid', 'custom-days-wrap', () => cfgCadence, v => cfgCa
 document.getElementById('year-prev').addEventListener('click', () => { displayYear--; renderMonthGrid(); });
 document.getElementById('year-next').addEventListener('click', () => { displayYear++; renderMonthGrid(); });
 document.getElementById('list-cfg-btn').addEventListener('click', () => openCfg(state.current));
+
+// Month grid toggle
+let gridCollapsed = false;
+document.getElementById('grid-toggle').addEventListener('click', () => {
+  gridCollapsed = !gridCollapsed;
+  const grid = document.getElementById('month-grid');
+  const btn  = document.getElementById('grid-toggle');
+  grid.classList.toggle('collapsed', gridCollapsed);
+  btn.classList.toggle('open', !gridCollapsed);
+});
 
 // New period modal
 document.getElementById('new-period-btn').addEventListener('click', openNewModal);
