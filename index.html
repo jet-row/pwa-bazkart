@@ -485,6 +485,19 @@
   </div>
 </div>
 
+<!-- ── Confirm modal ── -->
+<div class="modal-backdrop" id="confirm-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="confirm-modal-title">Clear completed?</div>
+    <p id="confirm-modal-msg" style="font-size:14px;color:var(--muted);margin-bottom:20px"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok">Clear</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -555,6 +568,14 @@ function fmtDate(iso) {
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
 // ── State ─────────────────────────────────────────────────────────────────────
+// Migrate old key (baskart_v1) to new key (bazkart_v1) on first run
+(function migrateOldKey() {
+  const OLD = 'baskart_v1';
+  if (!localStorage.getItem(KEY) && localStorage.getItem(OLD)) {
+    localStorage.setItem(KEY, localStorage.getItem(OLD));
+    localStorage.removeItem(OLD);
+  }
+})();
 let state = load();
 // migrate old periods that lack cadence fields
 Object.values(state.periods).forEach(p => {
@@ -598,6 +619,17 @@ const newCustomDays = document.getElementById('new-custom-days');
 
 const copyModal    = document.getElementById('copy-modal');
 const copyList     = document.getElementById('copy-period-list');
+
+const confirmModal    = document.getElementById('confirm-modal');
+const confirmMsg      = document.getElementById('confirm-modal-msg');
+document.getElementById('confirm-cancel').addEventListener('click', () => closeModal(confirmModal));
+document.getElementById('confirm-ok').addEventListener('click', () => { closeModal(confirmModal); _confirmCb && _confirmCb(); });
+let _confirmCb = null;
+function openConfirm(msg, okCb) {
+  confirmMsg.textContent = msg;
+  _confirmCb = okCb;
+  showModal(confirmModal);
+}
 
 // ── Render ────────────────────────────────────────────────────────────────────
 function render() { renderMonthGrid(); renderList(); renderStats(); }
@@ -664,11 +696,23 @@ function renderList() {
   const done    = all.filter(i =>  i.done);
   if (!all.length) { emptyEl.style.display = 'flex'; itemListEl.innerHTML = ''; return; }
   emptyEl.style.display = 'none';
-  const row = item => `
-    <div class="item-row ${item.done ? 'done' : ''}" data-id="${item.id}">
-      <div class="item-check">${item.done ? CHECK_SVG : ''}</div>
+  const pendingRow = item => `
+    <div class="item-row" data-id="${item.id}" draggable="true">
+      <div class="drag-handle" title="Drag to reorder">⠿</div>
+      <div class="item-check"></div>
       <span class="item-name">${esc(item.name)}</span>
-      ${item.qty ? `<span class="item-qty-tag${item.done ? ' done' : ''}">${esc(item.qty)}</span>` : ''}
+      ${item.qty ? `<span class="item-qty-tag">${esc(item.qty)}</span>` : ''}
+      <div class="item-actions">
+        <button class="icon-btn edit-btn" title="Edit">✎</button>
+        <button class="icon-btn del del-btn" title="Delete">✕</button>
+      </div>
+    </div>`;
+  const doneRow = item => `
+    <div class="item-row done" data-id="${item.id}">
+      <div class="drag-spacer"></div>
+      <div class="item-check">${CHECK_SVG}</div>
+      <span class="item-name">${esc(item.name)}</span>
+      ${item.qty ? `<span class="item-qty-tag done">${esc(item.qty)}</span>` : ''}
       <div class="item-actions">
         <button class="icon-btn edit-btn" title="Edit">✎</button>
         <button class="icon-btn del del-btn" title="Delete">✕</button>
@@ -681,7 +725,7 @@ function renderList() {
       <div class="div-line"></div>
       <button class="clear-done-btn">Clear</button>
     </div>` : '';
-  itemListEl.innerHTML = pending.map(row).join('') + divider + done.map(row).join('');
+  itemListEl.innerHTML = pending.map(pendingRow).join('') + divider + done.map(doneRow).join('');
   itemListEl.querySelectorAll('.item-check').forEach(el =>
     el.addEventListener('click', () => toggle(el.closest('.item-row').dataset.id)));
   itemListEl.querySelectorAll('.edit-btn').forEach(el =>
@@ -692,7 +736,8 @@ function renderList() {
   if (clearBtn) clearBtn.addEventListener('click', clearDone);
   itemListEl.querySelectorAll('.item-qty-tag:not(.done)').forEach(el =>
     el.addEventListener('click', e => { e.stopPropagation(); startQtyEdit(el); }));
-  itemListEl.querySelectorAll('.item-row').forEach(attachSwipe);
+  itemListEl.querySelectorAll('.item-row:not(.done)').forEach(el => { attachSwipe(el); bindDrag(el); });
+  itemListEl.querySelectorAll('.item-row.done').forEach(attachSwipe);
 }
 
 let _wasComplete = false;
@@ -738,17 +783,38 @@ function toggle(id) {
   if (item) { item.done = !item.done; save(state); renderList(); renderStats(); }
 }
 
+let _undoItem = null, _undoTimer = null;
 function remove(id) {
+  const item = findItem(id);
+  if (!item) return;
+  _undoItem = { periodId: state.current, item };
   state.periods[state.current].items = items().filter(i => i.id !== id);
-  save(state); render(); toast('Removed');
+  save(state); render();
+  toastWithAction('Removed', 'Undo', restoreUndo);
+  _undoTimer = setTimeout(() => { _undoItem = null; }, 5000);
+}
+function restoreUndo() {
+  if (!_undoItem) return;
+  clearTimeout(_undoTimer);
+  const { periodId, item } = _undoItem;
+  _undoItem = null;
+  if (state.periods[periodId]) {
+    state.periods[periodId].items.push(item);
+    save(state); render(); toast('Restored ✓');
+  }
 }
 
 function findItem(id) { return items().find(i => i.id === id); }
 
 function clearDone() {
   const n = items().filter(i => i.done).length;
-  state.periods[state.current].items = items().filter(i => !i.done);
-  save(state); render(); toast(`${n} item${n !== 1 ? 's' : ''} cleared`);
+  openConfirm(
+    `Remove ${n} completed item${n !== 1 ? 's' : ''} from this list?`,
+    () => {
+      state.periods[state.current].items = items().filter(i => !i.done);
+      save(state); render(); toast(`${n} item${n !== 1 ? 's' : ''} cleared`);
+    }
+  );
 }
 
 function startQtyEdit(badge) {
@@ -759,16 +825,27 @@ function startQtyEdit(badge) {
   input.value = badge.textContent;
   input.className = 'qty-edit-input';
   badge.replaceWith(input);
-  input.focus(); input.select();
+  requestAnimationFrame(() => { input.focus(); input.select(); });
+  let committed = false;
   const commit = () => {
+    if (committed) return;
+    committed = true;
+    document.removeEventListener('pointerdown', outsideHandler);
     const item = findItem(id);
     if (item) { item.qty = input.value.trim(); save(state); renderList(); renderStats(); }
   };
-  input.addEventListener('blur', commit);
+  const cancel = () => {
+    if (committed) return;
+    committed = true;
+    document.removeEventListener('pointerdown', outsideHandler);
+    renderList(); renderStats();
+  };
+  const outsideHandler = e => { if (!input.contains(e.target)) commit(); };
   input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') input.blur();
-    if (e.key === 'Escape') { renderList(); renderStats(); }
+    if (e.key === 'Enter') commit();
+    if (e.key === 'Escape') cancel();
   });
+  setTimeout(() => document.addEventListener('pointerdown', outsideHandler), 100);
 }
 
 function attachSwipe(row) {
@@ -799,6 +876,43 @@ function attachSwipe(row) {
     else if (dx < -THRESHOLD) remove(row.dataset.id);
     swiping = false;
   });
+}
+
+// ── Drag to reorder ───────────────────────────────────────────────────────────
+let _dragSrcId = null;
+function bindDrag(row) {
+  row.addEventListener('dragstart', e => {
+    _dragSrcId = row.dataset.id;
+    row.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  row.addEventListener('dragend', () => {
+    row.classList.remove('dragging');
+    itemListEl.querySelectorAll('.drag-over').forEach(r => r.classList.remove('drag-over'));
+  });
+  row.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    itemListEl.querySelectorAll('.drag-over').forEach(r => r.classList.remove('drag-over'));
+    if (row.dataset.id !== _dragSrcId) row.classList.add('drag-over');
+  });
+  row.addEventListener('drop', e => {
+    e.preventDefault();
+    if (_dragSrcId && _dragSrcId !== row.dataset.id) reorderItems(_dragSrcId, row.dataset.id);
+    _dragSrcId = null;
+  });
+}
+function reorderItems(srcId, tgtId) {
+  const all = items();
+  const pending = all.filter(i => !i.done);
+  const done = all.filter(i => i.done);
+  const si = pending.findIndex(i => i.id === srcId);
+  const ti = pending.findIndex(i => i.id === tgtId);
+  if (si === -1 || ti === -1) return;
+  const [moved] = pending.splice(si, 1);
+  pending.splice(ti, 0, moved);
+  state.periods[state.current].items = [...pending, ...done];
+  save(state); renderList();
 }
 
 // ── Edit item modal ───────────────────────────────────────────────────────────
@@ -999,10 +1113,23 @@ document.addEventListener('keydown', trapFocus);
 // ── Toast ─────────────────────────────────────────────────────────────────────
 let _t;
 function toast(msg) {
-  toastEl.textContent = msg;
+  toastEl.innerHTML = '';
+  toastEl.appendChild(document.createTextNode(msg));
   toastEl.classList.add('show');
   clearTimeout(_t);
   _t = setTimeout(() => toastEl.classList.remove('show'), 2200);
+}
+function toastWithAction(msg, label, cb) {
+  toastEl.innerHTML = '';
+  toastEl.appendChild(document.createTextNode(msg));
+  const btn = document.createElement('button');
+  btn.className = 'toast-undo';
+  btn.textContent = label;
+  btn.addEventListener('click', () => { toastEl.classList.remove('show'); clearTimeout(_t); cb(); });
+  toastEl.appendChild(btn);
+  toastEl.classList.add('show');
+  clearTimeout(_t);
+  _t = setTimeout(() => toastEl.classList.remove('show'), 5000);
 }
 
 // ── Util ──────────────────────────────────────────────────────────────────────
